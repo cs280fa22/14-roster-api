@@ -93,6 +93,19 @@ describe("Test User Schema & Model", () => {
         expect(err).toBeDefined();
       }
     });
+
+    it("test email is not unique", async () => {
+      try {
+        let name = faker.name.fullName();
+        const email = faker.internet.email();
+        await User.create({ name, email });
+
+        name = faker.name.fullName();
+        await User.create({ name, email });
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
   });
 
   afterAll(async () => {

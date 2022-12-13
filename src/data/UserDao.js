@@ -27,6 +27,10 @@ class UserDao {
     if (!result.success) {
       throw new ApiError(400, "Invalid Email!");
     }
+    result = await this.readAll({ email });
+    if (result.length > 0) {
+      throw new ApiError(400, "Email already in use!");
+    }
 
     debug("Creating the user document..");
     const user = await User.create({ name, email });
@@ -78,14 +82,23 @@ class UserDao {
 
     debug("Validating the name..");
     result = validName.safeParse(name);
-    if (name && !result.success) {
+    if (name !== undefined && !result.success) {
       throw new ApiError(400, "Invalid Name!");
     }
 
     debug("Validating the email..");
-    result = validEmail.safeParse(email);
-    if (email && !result.success) {
-      throw new ApiError(400, "Invalid Email!");
+    if (email !== undefined) {
+      result = validEmail.safeParse(email);
+      if (!result.success) {
+        throw new ApiError(400, "Invalid Email!");
+      }
+
+      result = await this.readAll({ email });
+      for (let user in result) {
+        if (user.id !== id) {
+          throw new ApiError(400, "Email already in use!");
+        }
+      }
     }
 
     debug("Updating the user document..");

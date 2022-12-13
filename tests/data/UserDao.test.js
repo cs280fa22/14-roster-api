@@ -109,11 +109,38 @@ describe("Test UserDao", () => {
         expect(err.status).toBe(400);
       }
     });
+
+    it("test email is not unique", async () => {
+      try {
+        let name = faker.name.fullName();
+        const email = faker.lorem.sentence();
+        await userDao.create({ name, email });
+
+        name = faker.name.fullName();
+        await User.create({ name, email });
+      } catch (err) {
+        expect(err.status).toBe(400);
+      }
+    });
   });
 
   it("test readAll()", async () => {
     const users = await userDao.readAll({});
     expect(users.length).toBe(users.length);
+  });
+
+  it("test readAll() given a name", async () => {
+    const index = Math.floor(Math.random() * numUsers);
+    const user = users[index];
+    const _users = await userDao.readAll({ name: user.name });
+    expect(_users.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("test readAll() given a email", async () => {
+    const index = Math.floor(Math.random() * numUsers);
+    const user = users[index];
+    const _users = await userDao.readAll({ email: user.email });
+    expect(_users.length).toBeGreaterThanOrEqual(1);
   });
 
   it("test read() given valid ID", async () => {
@@ -170,6 +197,49 @@ describe("Test UserDao", () => {
       await userDao.update({ id: mongoose.Types.ObjectId().toString() });
     } catch (err) {
       expect(err.status).toBe(404);
+    }
+  });
+
+  it("test update() given invalid name", async () => {
+    try {
+      const index = Math.floor(Math.random() * numUsers);
+      const user = users[index];
+      const name = "";
+      await userDao.update({
+        id: user.id,
+        name,
+      });
+    } catch (err) {
+      expect(err.status).toBe(400);
+    }
+  });
+
+  it("test update() given invalid email", async () => {
+    try {
+      const index = Math.floor(Math.random() * numUsers);
+      const user = users[index];
+      const email = faker.name.fullName();
+      await userDao.update({
+        id: user.id,
+        email,
+      });
+    } catch (err) {
+      expect(err.status).toBe(400);
+    }
+  });
+
+  it("test update() given duplicate email", async () => {
+    try {
+      const index1 = Math.floor(Math.random() * numUsers);
+      const user1 = users[index1];
+      const index2 = (index1 + 1) % numUsers;
+      const user2 = users[index2];
+      await userDao.update({
+        id: user1.id,
+        email: user2.email,
+      });
+    } catch (err) {
+      expect(err.status).toBe(400);
     }
   });
 

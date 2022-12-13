@@ -37,6 +37,22 @@ describe(`Test ${endpoint}`, () => {
       expect(response.status).toBe(200);
       expect(response.body.data.length).toBe(numUsers);
     });
+
+    it("Respond 200 searching for given name", async () => {
+      const index = Math.floor(Math.random() * numUsers);
+      const user = users[index];
+      const response = await request.get(`${endpoint}?name=${user.name}`);
+      expect(response.status).toBe(200);
+      expect(response.body.data.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("Respond 200 searching for given email", async () => {
+      const index = Math.floor(Math.random() * numUsers);
+      const user = users[index];
+      const response = await request.get(`${endpoint}?email=${user.email}`);
+      expect(response.status).toBe(200);
+      expect(response.body.data.length).toBeGreaterThanOrEqual(1);
+    });
   });
 
   describe("POST request", () => {
@@ -123,6 +139,22 @@ describe(`Test ${endpoint}`, () => {
         });
         expect(response.status).toBe(400);
       });
+
+      it("Duplicate email", async () => {
+        let name = faker.name.fullName();
+        const email = faker.internet.email();
+        await request.post(endpoint).send({
+          name,
+          email,
+        });
+
+        name = faker.name.fullName();
+        const response = await request.post(endpoint).send({
+          name,
+          email,
+        });
+        expect(response.status).toBe(400);
+      });
     });
   });
 
@@ -168,9 +200,37 @@ describe(`Test ${endpoint}`, () => {
       expect(response.body.data.email).toBe(email);
     });
 
-    it("Respond 400", async () => {
-      const response = await request.put(`${endpoint}/invalid}`);
-      expect(response.status).toBe(400);
+    describe("Respond 400", () => {
+      it("Invalid ID", async () => {
+        const response = await request.put(`${endpoint}/invalid}`);
+        expect(response.status).toBe(400);
+      });
+
+      it("Invalid name", async () => {
+        const index = Math.floor(Math.random() * numUsers);
+        const users = await userDao.readAll({});
+        const user = users[index];
+        const name = "";
+        const email = faker.internet.email();
+        const response = await request.put(`${endpoint}/${user.id}`).send({
+          name,
+          email,
+        });
+        expect(response.status).toBe(400);
+      });
+
+      it("Invalid email", async () => {
+        const index = Math.floor(Math.random() * numUsers);
+        const users = await userDao.readAll({});
+        const user = users[index];
+        const name = faker.name.fullName();
+        const email = "";
+        const response = await request.put(`${endpoint}/${user.id}`).send({
+          name,
+          email,
+        });
+        expect(response.status).toBe(400);
+      });
     });
 
     it("Respond 404", async () => {
