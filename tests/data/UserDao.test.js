@@ -5,6 +5,7 @@ import User from "../../src/model/User.js";
 import * as db from "../../src/data/db.js";
 import * as dotenv from "dotenv";
 import mongoose from "mongoose";
+import { verifyPassword } from "../../src/password";
 
 dotenv.config();
 
@@ -25,7 +26,8 @@ describe("Test UserDao", () => {
     for (let index = 0; index < numUsers; index++) {
       const name = faker.name.fullName();
       const email = faker.internet.email();
-      const user = await User.create({ name, email });
+      const password = faker.internet.password(6);
+      const user = await User.create({ name, email, password });
       users.push(user);
     }
   });
@@ -33,9 +35,11 @@ describe("Test UserDao", () => {
   it("test create()", async () => {
     const name = faker.name.fullName();
     const email = faker.internet.email();
-    const _user = await userDao.create({ name, email });
+    const password = faker.internet.password(6);
+    const _user = await userDao.create({ name, email, password });
     expect(_user.name).toBe(name);
     expect(_user.email).toBe(email);
+    expect(verifyPassword(password, _user.password)).toBe(true);
     expect(_user.id).toBeDefined();
   });
 
@@ -44,7 +48,8 @@ describe("Test UserDao", () => {
       try {
         const name = "";
         const email = faker.internet.email();
-        await userDao.create({ name, email });
+        const password = faker.internet.password(6);
+        await userDao.create({ name, email, password });
       } catch (err) {
         expect(err.status).toBe(400);
       }
@@ -54,7 +59,8 @@ describe("Test UserDao", () => {
       try {
         const name = null;
         const email = faker.internet.email();
-        await userDao.create({ name, email });
+        const password = faker.internet.password(6);
+        await userDao.create({ name, email, password });
       } catch (err) {
         expect(err.status).toBe(400);
       }
@@ -64,7 +70,8 @@ describe("Test UserDao", () => {
       try {
         const name = undefined;
         const email = faker.internet.email();
-        await userDao.create({ name, email });
+        const password = faker.internet.password(6);
+        await userDao.create({ name, email, password });
       } catch (err) {
         expect(err.status).toBe(400);
       }
@@ -74,7 +81,8 @@ describe("Test UserDao", () => {
       try {
         const name = faker.name.fullName();
         const email = "";
-        await userDao.create({ name, email });
+        const password = faker.internet.password(6);
+        await userDao.create({ name, email, password });
       } catch (err) {
         expect(err.status).toBe(400);
       }
@@ -84,7 +92,8 @@ describe("Test UserDao", () => {
       try {
         const name = faker.name.fullName();
         const email = null;
-        await userDao.create({ name, email });
+        const password = faker.internet.password(6);
+        await userDao.create({ name, email, password });
       } catch (err) {
         expect(err.status).toBe(400);
       }
@@ -94,7 +103,8 @@ describe("Test UserDao", () => {
       try {
         const name = faker.name.fullName();
         const email = undefined;
-        await userDao.create({ name, email });
+        const password = faker.internet.password(6);
+        await userDao.create({ name, email, password });
       } catch (err) {
         expect(err.status).toBe(400);
       }
@@ -104,7 +114,8 @@ describe("Test UserDao", () => {
       try {
         const name = faker.name.fullName();
         const email = faker.lorem.sentence();
-        await userDao.create({ name, email });
+        const password = faker.internet.password(6);
+        await userDao.create({ name, email, password });
       } catch (err) {
         expect(err.status).toBe(400);
       }
@@ -114,10 +125,56 @@ describe("Test UserDao", () => {
       try {
         let name = faker.name.fullName();
         const email = faker.lorem.sentence();
-        await userDao.create({ name, email });
+        let password = faker.internet.password(6);
+        await userDao.create({ name, email, password });
 
         name = faker.name.fullName();
-        await User.create({ name, email });
+        password = faker.internet.password(6);
+        await User.create({ name, email, password });
+      } catch (err) {
+        expect(err.status).toBe(400);
+      }
+    });
+
+    it("empty password", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = "";
+        await userDao.create({ name, email, password });
+      } catch (err) {
+        expect(err.status).toBe(400);
+      }
+    });
+
+    it("null password", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = null;
+        await userDao.create({ name, email, password });
+      } catch (err) {
+        expect(err.status).toBe(400);
+      }
+    });
+
+    it("undefined password", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = undefined;
+        await userDao.create({ name, email, password });
+      } catch (err) {
+        expect(err.status).toBe(400);
+      }
+    });
+
+    it("short password", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = faker.internet.password(5);
+        await userDao.create({ name, email, password });
       } catch (err) {
         expect(err.status).toBe(400);
       }
@@ -149,6 +206,7 @@ describe("Test UserDao", () => {
     const _user = await userDao.read(user.id);
     expect(_user.name).toBe(user.name);
     expect(_user.email).toBe(user.email);
+    expect(_user.password).toBe(user.password);
     expect(_user.id).toBe(user.id);
   });
 
@@ -173,14 +231,17 @@ describe("Test UserDao", () => {
     const user = users[index];
     const name = faker.name.fullName();
     const email = faker.internet.email();
+    const password = faker.internet.password(6);
     const _user = await userDao.update({
       id: user.id,
       name,
       email,
+      password,
     });
 
     expect(_user.name).toBe(name);
     expect(_user.email).toBe(email);
+    expect(verifyPassword(password, _user.password)).toBe(true);
     expect(_user.id).toBe(user.id);
   });
 
@@ -243,12 +304,27 @@ describe("Test UserDao", () => {
     }
   });
 
+  it("test update() given invalid password", async () => {
+    try {
+      const index = Math.floor(Math.random() * numUsers);
+      const user = users[index];
+      const password = faker.internet.password(5);
+      await userDao.update({
+        id: user.id,
+        password,
+      });
+    } catch (err) {
+      expect(err.status).toBe(400);
+    }
+  });
+
   it("test delete() given valid ID", async () => {
     const index = Math.floor(Math.random() * numUsers);
     const user = users[index];
     const _user = await userDao.delete(user.id);
     expect(_user.name).toBe(user.name);
     expect(_user.email).toBe(user.email);
+    expect(_user.password).toBe(user.password);
     expect(_user.id).toBe(user.id);
   });
 
