@@ -7,6 +7,12 @@ const router = express.Router();
 export const userDao = new UserDao();
 const endpoint = "/users";
 
+// pre: user is a Mongoose object
+const hidePassword = (user) => {
+  const { password, __v, ...rest } = user._doc;
+  return rest;
+};
+
 router.get(`${endpoint}`, async (req, res, next) => {
   debug(`${req.method} ${req.path} called...`);
   try {
@@ -16,7 +22,7 @@ router.get(`${endpoint}`, async (req, res, next) => {
     res.json({
       status: 200,
       message: `Successfully retrieved ${users.length} users!`,
-      data: users,
+      data: users.map((user) => hidePassword(user)),
     });
     debug(`Done with ${req.method} ${req.path}`);
   } catch (err) {
@@ -34,7 +40,7 @@ router.get(`${endpoint}/:id`, async (req, res, next) => {
     res.json({
       status: 200,
       message: `Successfully retrieved the following user!`,
-      data: user,
+      data: hidePassword(user),
     });
     debug(`Done with ${req.method} ${req.path}`);
   } catch (err) {
@@ -46,13 +52,13 @@ router.get(`${endpoint}/:id`, async (req, res, next) => {
 router.post(`${endpoint}`, async (req, res, next) => {
   debug(`${req.method} ${req.path} called...`);
   try {
-    const { name, email } = req.body;
-    const user = await userDao.create({ name, email });
+    const { name, email, password } = req.body;
+    const user = await userDao.create({ name, email, password });
     debug(`Preparing the response payload...`);
     res.status(201).json({
       status: 201,
       message: `Successfully created the following user!`,
-      data: user,
+      data: hidePassword(user),
     });
     debug(`Done with ${req.method} ${req.path}`);
   } catch (err) {
@@ -65,13 +71,13 @@ router.put(`${endpoint}/:id`, async (req, res, next) => {
   debug(`${req.method} ${req.path} called...`);
   try {
     const { id } = req.params;
-    const { name, email } = req.body;
-    const user = await userDao.update({ id, name, email });
+    const { name, email, password } = req.body;
+    const user = await userDao.update({ id, name, email, password });
     debug(`Preparing the response payload...`);
     res.json({
       status: 200,
       message: `Successfully updated the following bookmark!`,
-      data: user,
+      data: hidePassword(user),
     });
     debug(`Done with ${req.method} ${req.path}`);
   } catch (err) {
@@ -90,7 +96,7 @@ router.delete(`${endpoint}/:id`, async (req, res, next) => {
     res.json({
       status: 200,
       message: `Successfully deleted the following user!`,
-      data: user,
+      data: hidePassword(user),
     });
     debug(`Done with ${req.method} ${req.path} `);
   } catch (err) {
