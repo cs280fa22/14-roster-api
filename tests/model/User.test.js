@@ -15,18 +15,21 @@ describe("Test User Schema & Model", () => {
   it("test create user", async () => {
     const name = faker.name.fullName();
     const email = faker.internet.email();
-    const user = await User.create({ name, email });
+    const password = faker.internet.password();
+    const user = await User.create({ name, email, password });
     expect(user.name).toBe(name);
     expect(user.email).toBe(email);
     expect(user.id).toBeDefined();
+    expect(user.password).toBe(password);
   });
 
   describe("test name is required", () => {
     it("test name is null", async () => {
       try {
         const name = null;
+        const password = faker.internet.password();
         const email = faker.internet.email();
-        await User.create({ name, email });
+        await User.create({ name, email, password });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -35,8 +38,9 @@ describe("Test User Schema & Model", () => {
     it("test name is undefined", async () => {
       try {
         const name = undefined;
+        const password = faker.internet.password();
         const email = faker.internet.email();
-        await User.create({ name, email });
+        await User.create({ name, email, password });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -45,8 +49,9 @@ describe("Test User Schema & Model", () => {
     it("test name is empty", async () => {
       try {
         const name = "";
+        const password = faker.internet.password();
         const email = faker.internet.email();
-        await User.create({ name, email });
+        await User.create({ name, email, password });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -58,7 +63,8 @@ describe("Test User Schema & Model", () => {
       try {
         const name = faker.name.fullName();
         const email = null;
-        await User.create({ name, email });
+        const password = faker.internet.password();
+        await User.create({ name, email, password });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -68,7 +74,8 @@ describe("Test User Schema & Model", () => {
       try {
         const name = faker.name.fullName();
         const email = undefined;
-        await User.create({ name, email });
+        const password = faker.internet.password();
+        await User.create({ name, email, password });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -78,7 +85,8 @@ describe("Test User Schema & Model", () => {
       try {
         const name = faker.name.fullName();
         const email = "";
-        await User.create({ name, email });
+        const password = faker.internet.password();
+        await User.create({ name, email, password });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -88,7 +96,8 @@ describe("Test User Schema & Model", () => {
       try {
         const name = faker.name.fullName();
         const email = faker.lorem.sentence();
-        await User.create({ name, email });
+        const password = faker.internet.password();
+        await User.create({ name, email, password });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -98,10 +107,46 @@ describe("Test User Schema & Model", () => {
       try {
         let name = faker.name.fullName();
         const email = faker.internet.email();
-        await User.create({ name, email });
+        const password = faker.internet.password();
+        await User.create({ name, email, password });
 
         name = faker.name.fullName();
-        await User.create({ name, email });
+        await User.create({ name, email, password });
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+  });
+
+  describe("test password is required", () => {
+    it("test password is null", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = null;
+        await User.create({ name, email, password });
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+
+    it("test password is undefined", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = undefined;
+        await User.create({ name, email, password });
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+
+    it("test password is empty", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = "";
+        await User.create({ name, email, password });
       } catch (err) {
         expect(err).toBeDefined();
       }
