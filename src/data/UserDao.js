@@ -3,6 +3,7 @@ import ApiError from "../model/ApiError.js";
 import { z } from "zod";
 import mongoose from "mongoose";
 import { factory } from "../debug.js";
+import { hashPassword } from "../password.js";
 
 const debug = factory(import.meta.url);
 
@@ -11,11 +12,14 @@ const validObjectId = z
   .refine((id) => mongoose.isValidObjectId(id), "Invalid ID!");
 const validName = z.string().min(1, "Missing name attribute!");
 const validEmail = z.string().email("Invalid Email!");
+const validPassword = z
+  .string()
+  .min(6, "Password should be at least 6 characters.");
 
 class UserDao {
   // return the created user
   // throws ApiError when name or email is invalid
-  async create({ name, email }) {
+  async create({ name, email, password }) {
     debug("Validating the name..");
     let result = validName.safeParse(name);
     if (!result.success) {
@@ -32,8 +36,16 @@ class UserDao {
       throw new ApiError(400, "Email already in use!");
     }
 
+    debug("Validating the password..");
+    result = validPassword.safeParse(password);
+    if (!result.success) {
+      throw new ApiError(400, "Password should be at least 6 characters.");
+    }
+
+    password = hashPassword(password);
+
     debug("Creating the user document..");
-    const user = await User.create({ name, email });
+    const user = await User.create({ name, email, password });
     return user;
   }
 
@@ -73,7 +85,7 @@ class UserDao {
 
   // return the updated user
   // throws ApiError if id is invalid or resource does not exist in our database
-  async update({ id, name, email }) {
+  async update({ id, name, email, password }) {
     debug("Validating the document id..");
     let result = validObjectId.safeParse(id);
     if (!result.success) {
@@ -101,10 +113,20 @@ class UserDao {
       }
     }
 
+    if (password !== undefined) {
+      debug("Validating the password..");
+      result = validPassword.safeParse(password);
+      if (!result.success) {
+        throw new ApiError(400, "Invalid Password!");
+      }
+
+      password = hashPassword(password);
+    }
+
     debug("Updating the user document..");
     const user = await User.findByIdAndUpdate(
       id,
-      { name, email },
+      { name, email, password },
       { new: true, runValidators: true }
     );
     if (!user) {
