@@ -1,0 +1,128 @@
+import User from "../model/User.js";
+import ApiError from "../model/ApiError.js";
+import { z } from "zod";
+import mongoose from "mongoose";
+import { factory } from "../debug.js";
+
+const debug = factory(import.meta.url);
+
+const validObjectId = z
+  .string()
+  .refine((id) => mongoose.isValidObjectId(id), "Invalid ID!");
+const validName = z.string().min(1, "Missing name attribute!");
+const validEmail = z.string().email("Invalid Email!");
+
+class UserDao {
+  // return the created user
+  // throws ApiError when name or email is invalid
+  async create({ name, email }) {
+    debug("Validating the name..");
+    let result = validName.safeParse(name);
+    if (!result.success) {
+      throw new ApiError(400, "Invalid Name!");
+    }
+
+    debug("Validating the email..");
+    result = validEmail.safeParse(email);
+    if (!result.success) {
+      throw new ApiError(400, "Invalid Email!");
+    }
+
+    debug("Creating the user document..");
+    const user = await User.create({ name, email });
+    return user;
+  }
+
+  // return all users
+  async readAll({ name, email }) {
+    const filter = {};
+    if (name) {
+      filter.name = name;
+    }
+
+    if (email) {
+      filter.email = email;
+    }
+
+    debug("Reading all user documents..");
+    const users = await User.find(filter);
+    return users;
+  }
+
+  // return the user with the given id
+  // throws ApiError if id is invalid or resource does not exist in our database
+  async read(id) {
+    debug("Validating the document id..");
+    const result = validObjectId.safeParse(id);
+    if (!result.success) {
+      throw new ApiError(400, "Invalid ID!");
+    }
+
+    debug("Reading the user document..");
+    const user = await User.findById(id);
+    if (!user) {
+      throw new ApiError(404, "Resource not found!");
+    }
+
+    return user;
+  }
+
+  // return the updated user
+  // throws ApiError if id is invalid or resource does not exist in our database
+  async update({ id, name, email }) {
+    debug("Validating the document id..");
+    let result = validObjectId.safeParse(id);
+    if (!result.success) {
+      throw new ApiError(400, "Invalid ID!");
+    }
+
+    debug("Validating the name..");
+    result = validName.safeParse(name);
+    if (name && !result.success) {
+      throw new ApiError(400, "Invalid Name!");
+    }
+
+    debug("Validating the email..");
+    result = validEmail.safeParse(email);
+    if (email && !result.success) {
+      throw new ApiError(400, "Invalid Email!");
+    }
+
+    debug("Updating the user document..");
+    const user = await User.findByIdAndUpdate(
+      id,
+      { name, email },
+      { new: true, runValidators: true }
+    );
+    if (!user) {
+      throw new ApiError(404, "Resource not found!");
+    }
+
+    return user;
+  }
+
+  // return the deleted user
+  // throws ApiError if id is invalid or resource does not exist
+  async delete(id) {
+    debug("Validating the document id..");
+    const result = validObjectId.safeParse(id);
+    if (!result.success) {
+      throw new ApiError(400, "Invalid ID!");
+    }
+
+    debug("Deleting the user document..");
+    const user = await User.findByIdAndDelete(id);
+    if (!user) {
+      throw new ApiError(404, "Resource not found!");
+    }
+
+    return user;
+  }
+
+  async deleteAll() {
+    debug("Deleting all teeny url documents..");
+    await User.deleteMany({});
+  }
+}
+
+export default UserDao;
