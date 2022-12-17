@@ -1,5 +1,6 @@
 import { describe, beforeAll, afterAll, expect, it } from "vitest";
 import User from "../../src/model/User.js";
+import { UserRole } from "../../src/model/UserRole.js";
 import { faker } from "@faker-js/faker";
 import * as db from "../../src/data/db.js";
 import * as dotenv from "dotenv";
@@ -16,11 +17,25 @@ describe("Test User Schema & Model", () => {
     const name = faker.name.fullName();
     const email = faker.internet.email();
     const password = faker.internet.password();
+    const role = Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+    const user = await User.create({ name, email, password, role });
+    expect(user.name).toBe(name);
+    expect(user.email).toBe(email);
+    expect(user.id).toBeDefined();
+    expect(user.password).toBe(password);
+    expect(user.role).toBe(role);
+  });
+
+  it("test create user with default role", async () => {
+    const name = faker.name.fullName();
+    const email = faker.internet.email();
+    const password = faker.internet.password();
     const user = await User.create({ name, email, password });
     expect(user.name).toBe(name);
     expect(user.email).toBe(email);
     expect(user.id).toBeDefined();
     expect(user.password).toBe(password);
+    expect(user.role).toBe(UserRole.Student);
   });
 
   describe("test name is required", () => {
@@ -29,7 +44,9 @@ describe("Test User Schema & Model", () => {
         const name = null;
         const password = faker.internet.password();
         const email = faker.internet.email();
-        await User.create({ name, email, password });
+        const role =
+          Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+        await User.create({ name, email, password, role });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -40,7 +57,9 @@ describe("Test User Schema & Model", () => {
         const name = undefined;
         const password = faker.internet.password();
         const email = faker.internet.email();
-        await User.create({ name, email, password });
+        const role =
+          Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+        await User.create({ name, email, password, role });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -51,7 +70,9 @@ describe("Test User Schema & Model", () => {
         const name = "";
         const password = faker.internet.password();
         const email = faker.internet.email();
-        await User.create({ name, email, password });
+        const role =
+          Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+        await User.create({ name, email, password, role });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -64,7 +85,9 @@ describe("Test User Schema & Model", () => {
         const name = faker.name.fullName();
         const email = null;
         const password = faker.internet.password();
-        await User.create({ name, email, password });
+        const role =
+          Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+        await User.create({ name, email, password, role });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -75,7 +98,9 @@ describe("Test User Schema & Model", () => {
         const name = faker.name.fullName();
         const email = undefined;
         const password = faker.internet.password();
-        await User.create({ name, email, password });
+        const role =
+          Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+        await User.create({ name, email, password, role });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -86,7 +111,9 @@ describe("Test User Schema & Model", () => {
         const name = faker.name.fullName();
         const email = "";
         const password = faker.internet.password();
-        await User.create({ name, email, password });
+        const role =
+          Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+        await User.create({ name, email, password, role });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -97,7 +124,9 @@ describe("Test User Schema & Model", () => {
         const name = faker.name.fullName();
         const email = faker.lorem.sentence();
         const password = faker.internet.password();
-        await User.create({ name, email, password });
+        const role =
+          Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+        await User.create({ name, email, password, role });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -108,10 +137,12 @@ describe("Test User Schema & Model", () => {
         let name = faker.name.fullName();
         const email = faker.internet.email();
         const password = faker.internet.password();
-        await User.create({ name, email, password });
+        const role =
+          Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+        await User.create({ name, email, password, role });
 
         name = faker.name.fullName();
-        await User.create({ name, email, password });
+        await User.create({ name, email, password, role });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -124,7 +155,9 @@ describe("Test User Schema & Model", () => {
         const name = faker.name.fullName();
         const email = faker.internet.email();
         const password = null;
-        await User.create({ name, email, password });
+        const role =
+          Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+        await User.create({ name, email, password, role });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -135,7 +168,9 @@ describe("Test User Schema & Model", () => {
         const name = faker.name.fullName();
         const email = faker.internet.email();
         const password = undefined;
-        await User.create({ name, email, password });
+        const role =
+          Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+        await User.create({ name, email, password, role });
       } catch (err) {
         expect(err).toBeDefined();
       }
@@ -146,7 +181,59 @@ describe("Test User Schema & Model", () => {
         const name = faker.name.fullName();
         const email = faker.internet.email();
         const password = "";
-        await User.create({ name, email, password });
+        const role =
+          Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+        await User.create({ name, email, password, role });
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+  });
+
+  describe("test role is required", () => {
+    it("test role is null", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = faker.internet.password();
+        const role = null;
+        await User.create({ name, email, password, role });
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+
+    it("test role is undefined", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = faker.internet.password();
+        const role = undefined;
+        await User.create({ name, email, password, role });
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+
+    it("test role is empty", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = faker.internet.password();
+        const role = "";
+        await User.create({ name, email, password, role });
+      } catch (err) {
+        expect(err).toBeDefined();
+      }
+    });
+
+    it("test role is invalid", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = faker.internet.password();
+        const role = faker.random.word();
+        await User.create({ name, email, password, role });
       } catch (err) {
         expect(err).toBeDefined();
       }

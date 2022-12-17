@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { z } from "zod";
+import { UserRole } from "./UserRole.js";
 
 const UserSchema = new mongoose.Schema({
   name: {
@@ -14,6 +15,12 @@ const UserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
+  },
+  role: {
+    type: String,
+    enum: Object.values(UserRole),
+    required: true,
+    default: UserRole.Student,
   },
 });
 
