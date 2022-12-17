@@ -4,6 +4,7 @@ import { z } from "zod";
 import mongoose from "mongoose";
 import { factory } from "../debug.js";
 import { hashPassword } from "../password.js";
+import { UserRole } from "../model/UserRole.js";
 
 const debug = factory(import.meta.url);
 
@@ -15,11 +16,12 @@ const validEmail = z.string().email("Invalid Email!");
 const validPassword = z
   .string()
   .min(6, "Password should be at least 6 characters.");
+const validRole = z.enum(Object.values(UserRole));
 
 class UserDao {
   // return the created user
   // throws ApiError when name or email is invalid
-  async create({ name, email, password }) {
+  async create({ name, email, password, role }) {
     debug("Validating the name..");
     let result = validName.safeParse(name);
     if (!result.success) {
@@ -44,13 +46,24 @@ class UserDao {
 
     password = hashPassword(password);
 
+    if (role !== undefined) {
+      debug("Validating the role..");
+      result = validRole.safeParse(role);
+      if (!result.success) {
+        throw new ApiError(
+          400,
+          `Role should be. one of ${Object.values(UserRole)}`
+        );
+      }
+    }
+
     debug("Creating the user document..");
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email, password, role });
     return user;
   }
 
   // return all users
-  async readAll({ name, email }) {
+  async readAll({ name, email, role }) {
     const filter = {};
     if (name) {
       filter.name = name;
@@ -58,6 +71,10 @@ class UserDao {
 
     if (email) {
       filter.email = email;
+    }
+
+    if (role) {
+      filter.role = role;
     }
 
     debug("Reading all user documents..");
@@ -85,21 +102,23 @@ class UserDao {
 
   // return the updated user
   // throws ApiError if id is invalid or resource does not exist in our database
-  async update({ id, name, email, password }) {
+  async update({ id, name, email, password, role }) {
     debug("Validating the document id..");
     let result = validObjectId.safeParse(id);
     if (!result.success) {
       throw new ApiError(400, "Invalid ID!");
     }
 
-    debug("Validating the name..");
-    result = validName.safeParse(name);
-    if (name !== undefined && !result.success) {
-      throw new ApiError(400, "Invalid Name!");
+    if (name !== undefined) {
+      debug("Validating the name..");
+      result = validName.safeParse(name);
+      if (!result.success) {
+        throw new ApiError(400, "Invalid Name!");
+      }
     }
 
-    debug("Validating the email..");
     if (email !== undefined) {
+      debug("Validating the email..");
       result = validEmail.safeParse(email);
       if (!result.success) {
         throw new ApiError(400, "Invalid Email!");
@@ -123,10 +142,21 @@ class UserDao {
       password = hashPassword(password);
     }
 
+    if (role !== undefined) {
+      debug("Validating the role..");
+      result = validRole.safeParse(role);
+      if (!result.success) {
+        throw new ApiError(
+          400,
+          `Role should be. one of ${Object.keys(UserRole)}`
+        );
+      }
+    }
+
     debug("Updating the user document..");
     const user = await User.findByIdAndUpdate(
       id,
-      { name, email, password },
+      { name, email, password, role },
       { new: true, runValidators: true }
     );
     if (!user) {
