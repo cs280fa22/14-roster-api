@@ -5,7 +5,8 @@ import User from "../../src/model/User.js";
 import * as db from "../../src/data/db.js";
 import * as dotenv from "dotenv";
 import mongoose from "mongoose";
-import { verifyPassword } from "../../src/password";
+import { verifyPassword } from "../../src/password.js";
+import { UserRole } from "../../src/model/UserRole.js";
 
 dotenv.config();
 
@@ -27,7 +28,8 @@ describe("Test UserDao", () => {
       const name = faker.name.fullName();
       const email = faker.internet.email();
       const password = faker.internet.password(6);
-      const user = await User.create({ name, email, password });
+      const role = Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+      const user = await User.create({ name, email, password, role });
       users.push(user);
     }
   });
@@ -36,11 +38,25 @@ describe("Test UserDao", () => {
     const name = faker.name.fullName();
     const email = faker.internet.email();
     const password = faker.internet.password(6);
+    const role = Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+    const _user = await userDao.create({ name, email, password, role });
+    expect(_user.name).toBe(name);
+    expect(_user.email).toBe(email);
+    expect(verifyPassword(password, _user.password)).toBe(true);
+    expect(_user.id).toBeDefined();
+    expect(_user.role).toBe(role);
+  });
+
+  it("test create() without given role", async () => {
+    const name = faker.name.fullName();
+    const email = faker.internet.email();
+    const password = faker.internet.password(6);
     const _user = await userDao.create({ name, email, password });
     expect(_user.name).toBe(name);
     expect(_user.email).toBe(email);
     expect(verifyPassword(password, _user.password)).toBe(true);
     expect(_user.id).toBeDefined();
+    expect(_user.role).toBe(UserRole.Student);
   });
 
   describe("test create() throws error", () => {
@@ -179,6 +195,54 @@ describe("Test UserDao", () => {
         expect(err.status).toBe(400);
       }
     });
+
+    it("test role is null", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = faker.internet.password(6);
+        const role = null;
+        await userDao.create({ name, email, password, role });
+      } catch (err) {
+        expect(err.status).toBe(400);
+      }
+    });
+
+    it("test role is undefined", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = faker.internet.password(6);
+        const role = undefined;
+        await userDao.create({ name, email, password, role });
+      } catch (err) {
+        expect(err.status).toBe(400);
+      }
+    });
+
+    it("test role is empty", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = faker.internet.password(6);
+        const role = "";
+        await userDao.create({ name, email, password, role });
+      } catch (err) {
+        expect(err.status).toBe(400);
+      }
+    });
+
+    it("test role is invalid", async () => {
+      try {
+        const name = faker.name.fullName();
+        const email = faker.internet.email();
+        const password = faker.internet.password(6);
+        const role = faker.random.word();
+        await userDao.create({ name, email, password, role });
+      } catch (err) {
+        expect(err.status).toBe(400);
+      }
+    });
   });
 
   it("test readAll()", async () => {
@@ -193,11 +257,25 @@ describe("Test UserDao", () => {
     expect(_users.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("test readAll() given a email", async () => {
+  it("test readAll() given an email", async () => {
     const index = Math.floor(Math.random() * numUsers);
     const user = users[index];
     const _users = await userDao.readAll({ email: user.email });
     expect(_users.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("test readAll() given a role", async () => {
+    for (let role of Object.values(UserRole)) {
+      const count = users.reduce((total, user) => {
+        if (user.role === role) {
+          total += 1;
+        }
+        return total;
+      }, 0);
+
+      const _users = await userDao.readAll({ role });
+      expect(_users.length).toBeGreaterThanOrEqual(count);
+    }
   });
 
   it("test read() given valid ID", async () => {
@@ -208,6 +286,7 @@ describe("Test UserDao", () => {
     expect(_user.email).toBe(user.email);
     expect(_user.password).toBe(user.password);
     expect(_user.id).toBe(user.id);
+    expect(_user.role).toBe(user.role);
   });
 
   it("test read() given invalid ID", async () => {
@@ -232,17 +311,20 @@ describe("Test UserDao", () => {
     const name = faker.name.fullName();
     const email = faker.internet.email();
     const password = faker.internet.password(6);
+    const role = Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
     const _user = await userDao.update({
       id: user.id,
       name,
       email,
       password,
+      role,
     });
 
     expect(_user.name).toBe(name);
     expect(_user.email).toBe(email);
     expect(verifyPassword(password, _user.password)).toBe(true);
     expect(_user.id).toBe(user.id);
+    expect(_user.role).toBe(role);
   });
 
   it("test update() given invalid ID", async () => {
@@ -318,6 +400,20 @@ describe("Test UserDao", () => {
     }
   });
 
+  it("test update() given invalid role", async () => {
+    try {
+      const index = Math.floor(Math.random() * numUsers);
+      const user = users[index];
+      const role = faker.random.word();
+      await userDao.update({
+        id: user.id,
+        role,
+      });
+    } catch (err) {
+      expect(err.status).toBe(400);
+    }
+  });
+
   it("test delete() given valid ID", async () => {
     const index = Math.floor(Math.random() * numUsers);
     const user = users[index];
@@ -326,6 +422,7 @@ describe("Test UserDao", () => {
     expect(_user.email).toBe(user.email);
     expect(_user.password).toBe(user.password);
     expect(_user.id).toBe(user.id);
+    expect(_user.role).toBe(user.role);
   });
 
   it("test delete() given invalid ID", async () => {
