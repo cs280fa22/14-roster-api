@@ -2,6 +2,7 @@ import express from "express";
 import UserDao from "../data/UserDao.js";
 import ApiError from "../model/ApiError.js";
 import { verifyPassword } from "../password.js";
+import { createToken } from "../token.js";
 import { factory } from "../debug.js";
 
 const debug = factory(import.meta.url);
@@ -35,14 +36,14 @@ router.post("/login", async (req, res, next) => {
     }
 
     debug("Prepare the payload..");
+    const token = createToken({ user: { id: user.id } });
     res.status(201).json({
       status: 201,
       message: `Successfully signed in!`,
-      data: {
-        name: user.name,
-        email: user.email,
-      },
+      data: { name: user.name, email: user.email },
+      token,
     });
+
     debug(`Done with ${req.method} ${req.path}`);
   } catch (err) {
     debug(`There was an error processing ${req.method} ${req.path} `);
