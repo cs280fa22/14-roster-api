@@ -1,5 +1,6 @@
 import express from "express";
 import urls from "./routes/users.js";
+import auth from "./routes/auth.js";
 import cors from "cors";
 import helmet from "helmet";
 import { factory } from "./debug.js";
@@ -17,6 +18,7 @@ app.get("/", (req, res) => {
 });
 
 app.use(urls);
+app.use(auth);
 
 app.use((err, req, res, next) => {
   if (err) {
