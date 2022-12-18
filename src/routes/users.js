@@ -1,6 +1,9 @@
 import express from "express";
 import UserDao from "../data/UserDao.js";
 import { factory } from "../debug.js";
+import { decodeToken } from "../token.js";
+import { UserRole } from "../model/UserRole.js";
+import ApiError from "../model/ApiError.js";
 
 const debug = factory(import.meta.url);
 const router = express.Router();
@@ -13,8 +16,37 @@ const hidePassword = (user) => {
   return rest;
 };
 
-router.get(`${endpoint}`, async (req, res, next) => {
+const checkPermission = (req, res, next) => {
+  try {
+    if (req.method === "POST") {
+      return next();
+    }
+
+    const bearerHeader = req.headers["authorization"];
+    const bearer = bearerHeader.split(" ");
+    const token = bearer[1];
+    const { id, role } = decodeToken(token);
+    if (role === UserRole.Instructor) {
+      return next();
+    }
+
+    if (req.method === "GET" && id === req.params.id) {
+      return next();
+    } else if (req.method === "PUT" && id === req.params.id) {
+      return next();
+    } else if (req.method === "DELETE" && id === req.params.id) {
+      return next();
+    }
+
+    next(new ApiError(403, "Forbidden"));
+  } catch (err) {
+    next(new ApiError(401, "Unauthorized"));
+  }
+};
+
+router.get(`${endpoint}`, checkPermission, async (req, res, next) => {
   debug(`${req.method} ${req.path} called...`);
+
   try {
     const { name, email, role } = req.query;
     const users = await userDao.readAll({ name, email, role });
@@ -31,7 +63,7 @@ router.get(`${endpoint}`, async (req, res, next) => {
   }
 });
 
-router.get(`${endpoint}/:id`, async (req, res, next) => {
+router.get(`${endpoint}/:id`, checkPermission, async (req, res, next) => {
   debug(`${req.method} ${req.path} called...`);
   try {
     const { id } = req.params;
@@ -49,7 +81,7 @@ router.get(`${endpoint}/:id`, async (req, res, next) => {
   }
 });
 
-router.post(`${endpoint}`, async (req, res, next) => {
+router.post(`${endpoint}`, checkPermission, async (req, res, next) => {
   debug(`${req.method} ${req.path} called...`);
   try {
     const { name, email, password, role } = req.body;
@@ -67,7 +99,7 @@ router.post(`${endpoint}`, async (req, res, next) => {
   }
 });
 
-router.put(`${endpoint}/:id`, async (req, res, next) => {
+router.put(`${endpoint}/:id`, checkPermission, async (req, res, next) => {
   debug(`${req.method} ${req.path} called...`);
   try {
     const { id } = req.params;
@@ -86,7 +118,7 @@ router.put(`${endpoint}/:id`, async (req, res, next) => {
   }
 });
 
-router.delete(`${endpoint}/:id`, async (req, res, next) => {
+router.delete(`${endpoint}/:id`, checkPermission, async (req, res, next) => {
   debug(`${req.method} ${req.path} called...`);
   try {
     debug(`Read ID received as request parameter...`);
