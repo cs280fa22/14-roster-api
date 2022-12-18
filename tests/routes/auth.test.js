@@ -6,6 +6,7 @@ import { userDao } from "../../src/routes/users.js";
 import { decodeToken } from "../../src/token.js";
 import * as db from "../../src/data/db.js";
 import * as dotenv from "dotenv";
+import { UserRole } from "../../src/model/UserRole.js";
 
 dotenv.config();
 const endpoint = "/login";
@@ -27,7 +28,8 @@ describe(`Test ${endpoint}`, () => {
       const name = faker.name.fullName();
       const email = faker.internet.email();
       const password = email;
-      const user = await userDao.create({ name, email, password });
+      const role = Math.random() > 0.5 ? UserRole.Student : UserRole.Instructor;
+      const user = await userDao.create({ name, email, password, role });
       users.push(user);
     }
   });
@@ -43,8 +45,9 @@ describe(`Test ${endpoint}`, () => {
     expect(response.body.token).toBeDefined();
     expect(response.body.data.name).toBe(user.name);
     expect(response.body.data.email).toBe(user.email);
-    const { id } = decodeToken(response.body.token);
+    const { id, role } = decodeToken(response.body.token);
     expect(id).toBe(user.id);
+    expect(role).toBe(user.role);
   });
 
   it("Respond 400 missing email", async () => {

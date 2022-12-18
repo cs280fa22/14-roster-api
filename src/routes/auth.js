@@ -36,7 +36,7 @@ router.post("/login", async (req, res, next) => {
     }
 
     debug("Prepare the payload..");
-    const token = createToken({ user: { id: user.id } });
+    const token = createToken({ user: { id: user.id, role: user.role } });
     res.status(201).json({
       status: 201,
       message: `Successfully signed in!`,
