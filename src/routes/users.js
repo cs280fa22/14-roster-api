@@ -16,8 +16,8 @@ const hidePassword = (user) => {
 router.get(`${endpoint}`, async (req, res, next) => {
   debug(`${req.method} ${req.path} called...`);
   try {
-    const { name, email } = req.query;
-    const users = await userDao.readAll({ name, email });
+    const { name, email, role } = req.query;
+    const users = await userDao.readAll({ name, email, role });
     debug(`Preparing the response payload...`);
     res.json({
       status: 200,
@@ -52,8 +52,8 @@ router.get(`${endpoint}/:id`, async (req, res, next) => {
 router.post(`${endpoint}`, async (req, res, next) => {
   debug(`${req.method} ${req.path} called...`);
   try {
-    const { name, email, password } = req.body;
-    const user = await userDao.create({ name, email, password });
+    const { name, email, password, role } = req.body;
+    const user = await userDao.create({ name, email, password, role });
     debug(`Preparing the response payload...`);
     res.status(201).json({
       status: 201,
@@ -71,8 +71,8 @@ router.put(`${endpoint}/:id`, async (req, res, next) => {
   debug(`${req.method} ${req.path} called...`);
   try {
     const { id } = req.params;
-    const { name, email, password } = req.body;
-    const user = await userDao.update({ id, name, email, password });
+    const { name, email, password, role } = req.body;
+    const user = await userDao.update({ id, name, email, password, role });
     debug(`Preparing the response payload...`);
     res.json({
       status: 200,
